@@ -19,7 +19,8 @@ def login():
     if not user or not user.check_password(data['password']):
         raise APIException("Credenciales inválidas", status_code=401)
 
-    access_token = create_access_token(identity=user.id)
+    # Cambia el identity a string
+    access_token = create_access_token(identity=str(user.id))
     return jsonify({"token": access_token, "user_id": user.id}), 200
 
 @api.route('/protected', methods=['GET'])
@@ -83,6 +84,31 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({"message": f"Usuario con ID {user_id} eliminado correctamente"}), 200
+
+@api.route('/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
+def update_user(user_id):
+    current_user_id = int(get_jwt_identity())
+    if current_user_id != user_id:
+        raise APIException("No tienes permiso para actualizar este usuario", status_code=403)
+
+    user = User.query.get(user_id)
+    if not user:
+        raise APIException(f"Usuario con ID {user_id} no encontrado", status_code=404)
+
+    data = request.json
+    if 'name' in data:
+        user.name = data['name']
+    if 'email' in data:
+        existing_user = User.query.filter_by(email=data['email']).first()
+        if existing_user and existing_user.id != user_id:
+            raise APIException("El correo ya está registrado", status_code=400)
+        user.email = data['email']
+    if 'password' in data:
+        user.set_password(data['password'])
+
+    db.session.commit()
+    return jsonify(user.serialize()), 200
 
 # --------------------------------------------
 # Rutas para Transacciones
@@ -216,6 +242,38 @@ def delete_project(project_id):
     db.session.commit()
     return jsonify({"message": f"Proyecto con ID {project_id} eliminado correctamente"}), 200
 
+@api.route('/projects/<int:project_id>', methods=['PUT'])
+@jwt_required()
+def update_project(project_id):
+    current_user_id = int(get_jwt_identity())
+    project = Project.query.get(project_id)
+    if not project or project.user_id != current_user_id:
+        raise APIException("Proyecto no encontrado o no autorizado", status_code=404)
+
+    data = request.json
+    if 'name' in data:
+        project.name = data['name']
+    if 'description' in data:
+        project.description = data['description']
+    if 'start_date' in data:
+        project.start_date = data['start_date']
+    if 'end_date' in data:
+        project.end_date = data['end_date']
+
+    db.session.commit()
+    return jsonify(project.serialize()), 200
+
+@api.route('/projects/<int:project_id>', methods=['GET'])
+@jwt_required()
+def get_project_details(project_id):
+    current_user_id = int(get_jwt_identity())
+    project = Project.query.get(project_id)
+    if not project or project.user_id != current_user_id:
+        raise APIException("Proyecto no encontrado o no autorizado", status_code=404)
+
+    return jsonify(project.serialize()), 200
+
+
 # --------------------------------------------
 # Rutas para Presupuestos
 # --------------------------------------------
@@ -271,4 +329,30 @@ def delete_budget(budget_id):
     db.session.delete(budget)
     db.session.commit()
     return jsonify({"message": f"Presupuesto con ID {budget_id} eliminado correctamente"}), 200
+
+@api.route('/budgets/<int:budget_id>', methods=['PATCH'])
+@jwt_required()
+def update_budget_status(budget_id):
+    current_user_id = int(get_jwt_identity())
+    budget = Budget.query.get(budget_id)
+    if not budget or budget.user_id != current_user_id:
+        raise APIException("Presupuesto no encontrado o no autorizado", status_code=404)
+
+    data = request.json
+    if 'status' in data:
+        budget.status = data['status']
+
+    db.session.commit()
+    return jsonify(budget.serialize()), 200
+
+@api.route('/budgets/<int:budget_id>', methods=['GET'])
+@jwt_required()
+def get_budget_details(budget_id):
+    current_user_id = int(get_jwt_identity())
+    budget = Budget.query.get(budget_id)
+    if not budget or budget.user_id != current_user_id:
+        raise APIException("Presupuesto no encontrado o no autorizado", status_code=404)
+
+    return jsonify(budget.serialize()), 200
+
 
