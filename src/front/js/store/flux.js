@@ -3,6 +3,7 @@ const getState = ({ getStore, getActions, setStore }) => {
         store: {
             token: null,
             currentUser: null,
+            transactions: [], // Almacén para las transacciones
             errorMessage: null,
             loading: false, // Indicador de carga
         },
@@ -48,22 +49,19 @@ const getState = ({ getStore, getActions, setStore }) => {
             },
 
             signup: async (name, email, password) => {
-                const store = getStore();
                 setStore({ loading: true, errorMessage: null });
-            
                 try {
-                    const resp = await fetch(`${process.env.BACKEND_URL}/api/users`, { // Cambiar "signup" por "users"
+                    const resp = await fetch(`${process.env.BACKEND_URL}/api/users`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ name, email, password }),
                     });
-            
+
                     if (!resp.ok) {
                         const errorData = await resp.json();
                         throw new Error(errorData.msg || "Error en el registro");
                     }
-            
-                    // Registro exitoso
+
                     console.log("Usuario registrado con éxito.");
                     return true;
                 } catch (error) {
@@ -73,7 +71,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                 } finally {
                     setStore({ loading: false });
                 }
-            },            
+            },
 
             // Obtener usuario actual
             getCurrentUser: async () => {
@@ -102,6 +100,74 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
+            // Obtener transacciones
+            getTransactions: async () => {
+                const store = getStore();
+                try {
+                    const resp = await fetch(`${process.env.BACKEND_URL}/api/transactions`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${store.token}`,
+                        },
+                    });
+            
+                    if (!resp.ok) {
+                        throw new Error("Error al obtener las transacciones");
+                    }
+            
+                    const data = await resp.json();
+                    setStore({ transactions: data }); // Asegúrate de que setStore esté disponible
+                    console.log("Transacciones obtenidas:", data);
+                } catch (error) {
+                    console.error("Error al obtener las transacciones:", error);
+                }
+            },
+            
+            deleteTransaction: async (transactionId) => {
+                const store = getStore();
+                try {
+                    const resp = await actions.fetchWithToken(
+                        `${process.env.BACKEND_URL}/api/transactions/${transactionId}`,
+                        { method: "DELETE" }
+                    );
+            
+                    if (resp.message) {
+                        console.log("Transacción eliminada:", resp.message);
+                        // Actualizar las transacciones en el store
+                        const updatedTransactions = store.transactions.filter(
+                            (transaction) => transaction.id !== transactionId
+                        );
+                        setStore({ transactions: updatedTransactions });
+                    }
+                } catch (error) {
+                    console.error("Error al eliminar la transacción:", error);
+                }
+            },
+            
+            createTransaction: async (transactionData) => {
+                const store = getStore();
+                try {
+                    const resp = await actions.fetchWithToken(
+                        `${process.env.BACKEND_URL}/api/transactions`,
+                        {
+                            method: "POST",
+                            body: JSON.stringify(transactionData),
+                        }
+                    );
+            
+                    if (resp) {
+                        console.log("Transacción creada:", resp);
+                        setStore({ transactions: [...store.transactions, resp] });
+                        return true;
+                    }
+                } catch (error) {
+                    console.error("Error al crear transacción:", error);
+                    return false;
+                }
+            },
+            
+
             // Verificar si hay token en sessionStorage al cargar la app
             syncTokenFromSessionStorage: () => {
                 const token = sessionStorage.getItem("token");
@@ -127,7 +193,6 @@ const getState = ({ getStore, getActions, setStore }) => {
                     });
 
                     if (resp.status === 401) {
-                        // Token inválido o expirado, redirigir al inicio de sesión
                         console.warn("Token inválido o expirado, cerrando sesión...");
                         getActions().logout();
                         throw new Error("Sesión expirada, inicia sesión nuevamente.");
@@ -141,7 +206,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     return await resp.json();
                 } catch (error) {
                     console.error("Error en la solicitud protegida:", error);
-                    setStore({ errorMessage: error.message }); // Establecer errorMessage en el store
+                    setStore({ errorMessage: error.message });
                     throw error;
                 }
             },
