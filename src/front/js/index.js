@@ -1,11 +1,10 @@
+// src/front/js/index.js
 import React from "react";
 import ReactDOM from "react-dom";
-
-// Incluye tu archivo de estilos
-import "../styles/index.css";
-
-// Importa tu componente principal
+import injectContext from "./store/appContext.js"; // Asegúrate de importar injectContext
 import App from "./App.jsx";
 
-// Renderiza tu aplicación
-ReactDOM.render(<App />, document.getElementById("app"));
+// Envolver App con injectContext
+const ContextualizedApp = injectContext(App);
+
+ReactDOM.render(<ContextualizedApp />, document.querySelector("#app"));

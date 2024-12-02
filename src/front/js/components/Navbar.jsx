@@ -1,13 +1,12 @@
+// src/front/js/components/Navbar.jsx
 import React from "react";
 import { Link } from "react-router-dom";
 
-export const Navbar = () => {
+const Navbar = () => {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="container">
-        <Link className="navbar-brand" to="/">
-          Gestión Empresarial
-        </Link>
+    <nav className="navbar navbar-expand-lg navbar-light bg-light">
+      <div className="container-fluid">
+        <Link className="navbar-brand" to="/">Gestión Empresarial</Link>
         <button
           className="navbar-toggler"
           type="button"
@@ -20,21 +19,15 @@ export const Navbar = () => {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto">
+          <ul className="navbar-nav">
             <li className="nav-item">
-              <Link className="nav-link" to="/login">
-                Iniciar Sesión
-              </Link>
+              <Link className="nav-link" to="/">Inicio</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/signup">
-                Registrarse
-              </Link>
+              <Link className="nav-link" to="/login">Iniciar Sesión</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/dashboard">
-                Panel
-              </Link>
+              <Link className="nav-link" to="/signup">Registrarse</Link>
             </li>
           </ul>
         </div>
@@ -42,3 +35,5 @@ export const Navbar = () => {
     </nav>
   );
 };
+
+export default Navbar;

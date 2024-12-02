@@ -1,19 +1,17 @@
 import React, { useState } from "react";
 
-export const Signup = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+const Signup = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSignup = (e) => {
     e.preventDefault();
-    console.log("Registering user:", formData);
+    console.log("Registrarse con:", { name, email, password });
   };
 
   return (
-    <div className="card p-4">
+    <div className="text-center mt-5">
       <h2>Registrarse</h2>
       <form onSubmit={handleSignup}>
         <div className="mb-3">
@@ -21,9 +19,8 @@ export const Signup = () => {
           <input
             type="text"
             className="form-control"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
         </div>
         <div className="mb-3">
@@ -31,9 +28,8 @@ export const Signup = () => {
           <input
             type="email"
             className="form-control"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="mb-3">
@@ -41,17 +37,14 @@ export const Signup = () => {
           <input
             type="password"
             className="form-control"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <button type="submit" className="btn btn-primary">
-          Registrarse
-        </button>
+        <button type="submit" className="btn btn-primary">Registrarse</button>
       </form>
     </div>
   );
 };
+
+export default Signup;
