@@ -11,6 +11,7 @@ const getState = ({ getStore, getActions, setStore }) => {
             login: async (email, password) => {
                 setStore({ loading: true, errorMessage: null });
                 try {
+                    console.log("Iniciando sesión con email:", email);
                     const resp = await fetch(`${process.env.BACKEND_URL}/api/login`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -19,11 +20,13 @@ const getState = ({ getStore, getActions, setStore }) => {
 
                     if (!resp.ok) {
                         const errorData = await resp.json();
+                        console.error("Error en el login:", errorData);
                         throw new Error(errorData.msg || "Error en el inicio de sesión");
                     }
 
                     const data = await resp.json();
-                    setStore({ token: data.token, errorMessage: null });
+                    console.log("Login exitoso, token recibido:", data.token);
+                    setStore({ token: data.token });
 
                     // Guardar el token en sessionStorage
                     sessionStorage.setItem("token", data.token);
@@ -39,9 +42,38 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             // Logout
             logout: () => {
+                console.log("Cerrando sesión...");
                 setStore({ token: null, currentUser: null });
                 sessionStorage.removeItem("token");
             },
+
+            signup: async (name, email, password) => {
+                const store = getStore();
+                setStore({ loading: true, errorMessage: null });
+            
+                try {
+                    const resp = await fetch(`${process.env.BACKEND_URL}/api/users`, { // Cambiar "signup" por "users"
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, email, password }),
+                    });
+            
+                    if (!resp.ok) {
+                        const errorData = await resp.json();
+                        throw new Error(errorData.msg || "Error en el registro");
+                    }
+            
+                    // Registro exitoso
+                    console.log("Usuario registrado con éxito.");
+                    return true;
+                } catch (error) {
+                    console.error("Error al registrarse:", error);
+                    setStore({ errorMessage: error.message });
+                    return false;
+                } finally {
+                    setStore({ loading: false });
+                }
+            },            
 
             // Obtener usuario actual
             getCurrentUser: async () => {
@@ -61,6 +93,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     }
 
                     const data = await resp.json();
+                    console.log("Usuario obtenido con éxito:", data);
                     setStore({ currentUser: data });
                 } catch (error) {
                     console.error("Error al obtener el usuario:", error);
@@ -73,7 +106,10 @@ const getState = ({ getStore, getActions, setStore }) => {
             syncTokenFromSessionStorage: () => {
                 const token = sessionStorage.getItem("token");
                 if (token) {
+                    console.log("Token sincronizado desde sessionStorage");
                     setStore({ token });
+                } else {
+                    console.warn("No se encontró un token en sessionStorage");
                 }
             },
 
@@ -86,17 +122,26 @@ const getState = ({ getStore, getActions, setStore }) => {
                         headers: {
                             ...options.headers,
                             Authorization: `Bearer ${store.token}`,
+                            "Content-Type": "application/json", // Asegurar Content-Type por defecto
                         },
                     });
 
+                    if (resp.status === 401) {
+                        // Token inválido o expirado, redirigir al inicio de sesión
+                        console.warn("Token inválido o expirado, cerrando sesión...");
+                        getActions().logout();
+                        throw new Error("Sesión expirada, inicia sesión nuevamente.");
+                    }
+
                     if (!resp.ok) {
                         const errorData = await resp.json();
-                        throw new Error(errorData.msg || "Error en la solicitud");
+                        throw new Error(errorData.msg || `Error ${resp.status}`);
                     }
 
                     return await resp.json();
                 } catch (error) {
                     console.error("Error en la solicitud protegida:", error);
+                    setStore({ errorMessage: error.message }); // Establecer errorMessage en el store
                     throw error;
                 }
             },

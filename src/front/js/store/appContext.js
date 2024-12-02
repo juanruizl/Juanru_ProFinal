@@ -28,12 +28,6 @@ const injectContext = (PassedComponent) => {
                 console.warn("syncTokenFromSessionStorage no está definido");
             }
 
-            if (state?.actions?.getMessage) {
-                state.actions.getMessage();
-            } else {
-                console.warn("getMessage no está definido");
-            }
-
             // Otros efectos secundarios iniciales pueden ir aquí
         }, []);
 

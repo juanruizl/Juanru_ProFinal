@@ -6,6 +6,7 @@ import logging
 from flask import Flask, jsonify, send_from_directory
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS  # Importar flask-cors
 from api.utils import APIException, generate_sitemap
 from api.models import db
 from api.routes import api
@@ -20,6 +21,9 @@ app.url_map.strict_slashes = False
 app.config['JWT_SECRET_KEY'] = 'JuanrRuProject'  # Clave secreta fija
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False  # Deshabilitar expiración del token
 jwt = JWTManager(app)
+
+# Configuración de CORS
+CORS(app, resources={r"/api/*": {"origins": "*"}})  # Permitir solicitudes desde cualquier origen
 
 # Configuración del entorno
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
@@ -69,4 +73,3 @@ def serve_any_other_file(path):
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3001))
     app.run(host='0.0.0.0', port=PORT, debug=True)
-
