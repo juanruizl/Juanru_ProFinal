@@ -1,57 +1,95 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../store/appContext";
 
-const TransactionList = () => {
+const Transactions = () => {
     const { store, actions } = useContext(Context);
+    const [newTransaction, setNewTransaction] = useState({ amount: "", transaction_type: "", description: "" });
 
     useEffect(() => {
-        actions.getTransactions(); // Obtener transacciones al cargar la vista
+        actions.getTransactions();
     }, []);
 
+    const handleChange = (e) => {
+        setNewTransaction({ ...newTransaction, [e.target.name]: e.target.value });
+    };
+
+    const handleCreate = async (e) => {
+        e.preventDefault();
+        const success = await actions.createTransaction(newTransaction);
+        if (success) {
+            setNewTransaction({ amount: "", transaction_type: "", description: "" });
+            actions.getTransactions(); // Actualizar la lista
+        }
+    };
+
+    const handleDelete = (id) => {
+        actions.deleteTransaction(id);
+    };
+
     return (
-        <div className="container mt-5">
-            <h2>Transacciones</h2>
-            {store.transactions && store.transactions.length > 0 ? (
-                <table className="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Monto</th>
-                            <th>Tipo</th>
-                            <th>Descripción</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {store.transactions.map((transaction, index) => (
-                            <tr key={transaction.id}>
-                                <td>{index + 1}</td>
-                                <td>{transaction.amount}</td>
-                                <td>{transaction.transaction_type}</td>
-                                <td>{transaction.description || "Sin descripción"}</td>
-                                <td>
-                                    <button
-                                        className="btn btn-warning btn-sm me-2"
-                                        onClick={() => actions.editTransaction(transaction.id)}
-                                    >
-                                        Editar
-                                    </button>
-                                    <button
-                                        className="btn btn-danger btn-sm"
-                                        onClick={() => actions.deleteTransaction(transaction.id)}
-                                    >
-                                        Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+        <div className="container mt-4">
+            <h1>Gestión de Transacciones</h1>
+
+            <form onSubmit={handleCreate} className="mb-4">
+                <h4>Crear nueva transacción</h4>
+                <div className="mb-3">
+                    <label className="form-label">Monto</label>
+                    <input
+                        type="number"
+                        className="form-control"
+                        name="amount"
+                        value={newTransaction.amount}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label">Tipo de transacción</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        name="transaction_type"
+                        value={newTransaction.transaction_type}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label">Descripción</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        name="description"
+                        value={newTransaction.description}
+                        onChange={handleChange}
+                    />
+                </div>
+                <button type="submit" className="btn btn-primary">Crear</button>
+            </form>
+
+            <h4>Lista de Transacciones</h4>
+            {store.transactions.length > 0 ? (
+                <ul className="list-group">
+                    {store.transactions.map((transaction) => (
+                        <li key={transaction.id} className="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>{transaction.amount}</strong> - {transaction.transaction_type} <br />
+                                {transaction.description}
+                            </span>
+                            <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDelete(transaction.id)}
+                            >
+                                Eliminar
+                            </button>
+                        </li>
+                    ))}
+                </ul>
             ) : (
-                <p>No hay transacciones disponibles.</p>
+                <p>No hay transacciones registradas.</p>
             )}
         </div>
     );
 };
 
-export default TransactionList;
+export default Transactions;
